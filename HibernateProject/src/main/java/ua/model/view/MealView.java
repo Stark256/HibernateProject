@@ -23,6 +23,22 @@ public class MealView {
 	
 	private List<String> ingredients;
 
+	
+	
+	public MealView(Integer id, String title, String description, BigDecimal price, String photoUrl, int version,
+			String cuisine, int weight, List<String> ingredients) {
+		super();
+		this.id = id;
+		this.title = title;
+		this.description = description;
+		this.price = price;
+		this.photoUrl = photoUrl;
+		this.version = version;
+		this.cuisine = cuisine;
+		this.weight = weight;
+		this.ingredients = ingredients;
+	}
+
 	public Integer getId() {
 		return id;
 	}

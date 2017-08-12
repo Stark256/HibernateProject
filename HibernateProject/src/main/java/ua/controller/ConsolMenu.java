@@ -15,6 +15,8 @@ import ua.entity.OpenClose;
 import ua.entity.Order;
 import ua.entity.Table;
 import ua.entity.Type;
+import ua.model.view.CafeView;
+import ua.model.view.MealView;
 
 public class ConsolMenu {
 	private EntityManager em;
@@ -33,7 +35,7 @@ public class ConsolMenu {
 	}
 
 	// --------------------Delete--------------------//
-	public void deleteAll(){
+	public void deleteAll() {
 		deleteAllCafe();
 		deleteAllCuisine();
 		deleteAllTime();
@@ -42,7 +44,7 @@ public class ConsolMenu {
 		deleteAllMeal();
 		deleteAllOrder();
 	}
-	
+
 	public void deleteAllCafe() {
 		List<Cafe> list = em.createQuery("FROM Cafe", Cafe.class).getResultList();
 		for (Cafe cafe : list) {
@@ -372,24 +374,26 @@ public class ConsolMenu {
 
 	// --------------------Print--------------------//
 	public void printOrder() {
-		List<Order> list = em.createQuery("FROM Order", Order.class).getResultList();
+		List<Order> list = em.createQuery("Select o FROM Order o JOIN o.table JOIN o.meals", Order.class)
+				.getResultList();
 		for (Order order : list) {
 			System.out.println(order.getId() + "|" + order.getTable() + "|" + order.getMeals() + "|");
 		}
 	}
 
 	public void printMeal() {
-		List<Meal> list = em.createQuery("FROM Meal", Meal.class).getResultList();
+		List<Meal> list = em.createQuery("Select m FROM Meal m JOIN m.cuisine ", Meal.class).getResultList();
 		for (Meal meal : list) {
-			System.out.println(meal.getId() + "|" + meal.getName() + "|" + meal.getCuisine() + "|" + meal.getPrice()
-					+ "|" + meal.getWeight() + "|" + meal.getIngredients() + "|" + meal.getDescription());
+			System.out.println(meal.getId() + "|" + meal.getName() + "|" + meal.getCuisine().getName() + "|"
+					+ meal.getPrice() + "|" + meal.getWeight() + "|" + meal.getDescription());
 		}
 	}
 
 	public void printTable() {
-		List<Table> list = em.createQuery("FROM Table", Table.class).getResultList();
+		List<Table> list = em.createQuery("Select t FROM Table t JOIN t.cafe", Table.class).getResultList();
 		for (Table table : list) {
-			System.out.println(table.getId() + "|" + table.getCountOfPeople() + "|" + table.isFree());
+			System.out.println(table.getId() + "|" + table.getCountOfPeople() + "|" + table.isFree() + "|"
+					+ table.getCafe().getName());
 		}
 	}
 
@@ -408,18 +412,64 @@ public class ConsolMenu {
 	}
 
 	public void printCuisine() {
-		List<Cuisine> list = em.createQuery("FROM Cuisine", Cuisine.class).getResultList();
+		List<Cuisine> list = em.createQuery("FROM Cuisine ", Cuisine.class).getResultList();
 		for (Cuisine cuisine : list) {
 			System.out.println(cuisine.getId() + "|" + cuisine.getName());
 		}
 	}
 
 	public void printCafe() {
-		List<Cafe> list = em.createQuery("Select c FROM Cafe c JOIN c.open op JOIN c.close cl", Cafe.class).getResultList();
+		List<Cafe> list = em.createQuery("Select c FROM Cafe c JOIN c.open op JOIN c.close cl", Cafe.class)
+				.getResultList();
 		for (Cafe cafe : list) {
 			System.out.println(cafe.getId() + "|" + cafe.getName() + "|" + cafe.getAddress() + "|" + cafe.getType()
-					+ "|" + cafe.getOpen().getTime() + "|" + cafe.getClose().getTime() + "|" + cafe.getPhone() + "|" + cafe.getEmail() + "|"
-					+ cafe.getShortDescription() + "|" + cafe.getFullDescription());
+					+ "|" + cafe.getOpen().getTime() + "|" + cafe.getClose().getTime() + "|" + cafe.getPhone() + "|"
+					+ cafe.getEmail() + "|" + cafe.getShortDescription() + "|" + cafe.getFullDescription());
+		}
+	}
+
+	public void printCafeMeal(Cafe cafe) {
+		for (Meal meals : cafe.getMeals()) {
+			System.out.println(meals.getId() + "|" + meals.getName());
+		}
+	}
+
+	public void printCafeView1() {
+		List<Cafe> cafes = em
+				.createQuery("Select c FROM Cafe c JOIN c.open o JOIN c.close c WHERE o.time=?1", Cafe.class)
+				.setParameter(1, LocalTime.of(13, 0)).getResultList();
+		List<CafeView> views = new ArrayList<>();
+		for (Cafe cafe : cafes) {
+			CafeView cafeView = new CafeView(cafe.getId(), cafe.getRate(), cafe.getName(), cafe.getPhotoUrl(),
+					cafe.getVersion(), cafe.getAddress(), cafe.getFullDescription(), cafe.getType(), cafe.getPhone(),
+					cafe.getEmail(), cafe.getOpen().getTime(), cafe.getClose().getTime());
+			views.add(cafeView);
+			cafeView.toString();
+		}
+
+	}
+
+	public void printCafeView() {
+		List<CafeView> views = em.createQuery(
+				"Select ua.model.view CafeView(c.id, c.rate,c.name, c.photoUrl, c.version, "
+						+ "c.address,c.fullDescription, c.type, c.phone, c.email, open.time, close.time) "
+						+ "FROM Cafe c LEFT JOIN c.open open LEFT JOIN c.close close WHERE open.time=?1",
+				CafeView.class).setParameter(1, LocalTime.of(13, 0)).getResultList();
+		for (CafeView cafeView : views) {
+			System.out.println(cafeView.getId() + "|" + cafeView.getName() + "|" + cafeView.getAddress() + "|"
+					+ cafeView.getType() + "|" + cafeView.getOpen() + "|" + cafeView.getClose() + "|"
+					+ cafeView.getPhone() + "|" + cafeView.getEmail() + "|" + cafeView.getFullDescription());
+		}
+	}
+
+	public void printMealView() {
+		List<MealView> viewsML = em.createQuery("Select ua.model.view MealView(m.id, m.title, "
+				+ "m.description, m.price, m.photoUrl, m.version,m.cuisine, " + "m.weight, ing.ingredients) "
+				+ "FROM Meal m LEFT JOIN m.ingredients ing ", MealView.class).getResultList();
+		for (MealView malView : viewsML) {
+			System.out.println(
+					malView.getId() + "|" + malView.getTitle() + "|" + malView.getCuisine() + "|" + malView.getWeight()
+							+ "|" + malView.getPrice() + "|" + malView.getWeight() + "|" + malView.getIngredients());
 		}
 	}
 
@@ -427,13 +477,55 @@ public class ConsolMenu {
 	public void menu() {
 		boolean isRun = true;
 		while (isRun) {
-			System.out.println("1)Uuser");
+			// System.out.println("1)Uuser");
 			System.out.println("2)Admin");
-			switch (cin.nextInt()) {
-			case 1: {
+			// System.out.println("3)Print cafe viev");
+			// System.out.println("4)Print meal viev");
 
-			}
-				break;
+			switch (cin.nextInt()) {
+			/*
+			 * case 3:{ // System.out.println("Enter time "); //printCafeView();
+			 * printCafeView1(); } break; case 4:{ printMealView(); } break;
+			 * case 1: { boolean isUser = true; while (isUser) {
+			 * System.out.println("1)Take a place");
+			 * System.out.println("2)Fires a place"); switch (cin.nextInt()) {
+			 * case 1: { System.out.println("Choise cafe");
+			 * System.out.println("------------------------"); printCafe();
+			 * System.out.println("------------------------"); Cafe cafe =
+			 * em.find(Cafe.class, verificationCafeId(cin.next()));
+			 * System.out.println("Choise table ID");
+			 * System.out.println("------------------------");
+			 * System.out.println("ID | Count of people"); for (Table caf :
+			 * cafe.getTables()) { System.out.println(caf.getId() + "|" +
+			 * caf.getCountOfPeople()); }
+			 * System.out.println("------------------------"); Table table =
+			 * em.find(Table.class, cin.nextInt()); table.setFree(false);
+			 * System.out.println("------------------------"); boolean isMealRun
+			 * = true; List<Meal> meals = new ArrayList<>();
+			 * 
+			 * while (isMealRun) { System.out.println("1)Order a meal"); switch
+			 * (cin.nextInt()) { case 1: {
+			 * System.out.println("------------------------");
+			 * printCafeMeal(cafe);
+			 * System.out.println("------------------------");
+			 * meals.add(em.find(Meal.class, verificationMealId(cin.next()))); }
+			 * break;
+			 * 
+			 * default: isMealRun = false; break; } } Order order=new Order();
+			 * order.setTable(table); order.setMeals(meals); em.persist(order);
+			 * em.persist(table); }
+			 * 
+			 * break; case 2: { System.out.println("Choice order ID");
+			 * System.out.println("------------------------"); printOrder();
+			 * System.out.println("------------------------"); Order
+			 * order=em.find(Order.class, cin.nextInt()); Table
+			 * table=em.find(Table.class, order.getTable());
+			 * table.setFree(true); em.remove(order); em.persist(table);
+			 * 
+			 * }
+			 * 
+			 * break; default: isUser=false; break; } } } break;
+			 */
 			case 2: {
 				boolean isAdm = false;
 				System.out.println("Enter password");
@@ -448,137 +540,137 @@ public class ConsolMenu {
 					System.out.println("------------------------");
 					switch (cin.nextInt()) {
 					case 1: {
-						boolean isAdd=true;
-						while(isAdd){
+						boolean isAdd = true;
+						while (isAdd) {
 							System.out.println("------------------------");
-						System.out.println("-->1)Add Default");
-						System.out.println("-->2)Add Ingredient");
-						System.out.println("-->3)Add Cuisine");
-						System.out.println("-->4)Add Time");
-						System.out.println("-->5)Add Cafe");
-						System.out.println("-->6)Add Table");
-						System.out.println("-->7)Add Order");
-						System.out.println("-->8)Add Meal");
-						System.out.println("------------------------");
-						switch (cin.nextInt()) {
-						case 1: {
-							System.out.println("------------------------");
-							System.out.println("--->1)Add Default Ingredient");
-							System.out.println("--->2)Add Default Cuisine");
-							System.out.println("--->3)Add Default Time");
+							System.out.println("-->1)Add Default");
+							System.out.println("-->2)Add Ingredient");
+							System.out.println("-->3)Add Cuisine");
+							System.out.println("-->4)Add Time");
+							System.out.println("-->5)Add Cafe");
+							System.out.println("-->6)Add Table");
+							System.out.println("-->7)Add Order");
+							System.out.println("-->8)Add Meal");
 							System.out.println("------------------------");
 							switch (cin.nextInt()) {
 							case 1: {
-								addDefaultIngredient();
+								System.out.println("------------------------");
+								System.out.println("--->1)Add Default Ingredient");
+								System.out.println("--->2)Add Default Cuisine");
+								System.out.println("--->3)Add Default Time");
+								System.out.println("------------------------");
+								switch (cin.nextInt()) {
+								case 1: {
+									addDefaultIngredient();
 
+								}
+									break;
+								case 2: {
+									addDefaultCuisine();
+
+								}
+									break;
+								case 3: {
+									addDefaultTime();
+
+								}
+									break;
+
+								default: {
+
+								}
+								}
 							}
 								break;
 							case 2: {
-								addDefaultCuisine();
-
+								addIngredient();
 							}
 								break;
 							case 3: {
-								addDefaultTime();
-
+								addCuisine();
+							}
+								break;
+							case 4: {
+								addOpenClose();
+							}
+								break;
+							case 5: {
+								addCafe();
+							}
+								break;
+							case 6: {
+								addTable();
+							}
+								break;
+							case 7: {
+								addOrder();
+							}
+								break;
+							case 8: {
+								addMeal();
 							}
 								break;
 
 							default: {
-
+								isAdd = false;
 							}
 							}
 						}
-							break;
-						case 2: {
-							addIngredient();
-						}
-							break;
-						case 3: {
-							addCuisine();
-						}
-							break;
-						case 4: {
-							addOpenClose();
-						}
-							break;
-						case 5: {
-							addCafe();
-						}
-							break;
-						case 6: {
-							addTable();
-						}
-							break;
-						case 7: {
-							addOrder();
-						}
-							break;
-						case 8: {
-							addMeal();
-						}
-							break;
-
-						default: {
-							isAdd=false;
-						}
-						}
-					}
 					}
 						break;
 					case 2: {
-						boolean isPrint=true;
-						while(isPrint){
+						boolean isPrint = true;
+						while (isPrint) {
 							System.out.println("------------------------");
-						System.out.println("-->1)Print Cafe");
-						System.out.println("-->2)Print Time");
-						System.out.println("-->3)Print Meal");
-						System.out.println("-->4)Print Cuisine");
-						System.out.println("-->5)Print Ingredient");
-						System.out.println("-->6)Print Table");
-						System.out.println("-->7)Print Order");
-						System.out.println("------------------------");
-						switch (cin.nextInt()) {
-						case 1: {
-							printCafe();
-						}
-							break;
-						case 2: {
-							printOpenClose();
-						}
-							break;
-						case 3: {
-							printMeal();
-						}
-							break;
-						case 4: {
-							printCuisine();
-						}
-							break;
-						case 5: {
-							printIngredient();
-						}
-							break;
-						case 6: {
-							printTable();
-						}
-							break;
-						case 7: {
-							printOrder();
-						}
-							break;
+							System.out.println("-->1)Print Cafe");
+							System.out.println("-->2)Print Time");
+							System.out.println("-->3)Print Meal");
+							System.out.println("-->4)Print Cuisine");
+							System.out.println("-->5)Print Ingredient");
+							System.out.println("-->6)Print Table");
+							System.out.println("-->7)Print Order");
+							System.out.println("------------------------");
+							switch (cin.nextInt()) {
+							case 1: {
+								printCafe();
+							}
+								break;
+							case 2: {
+								printOpenClose();
+							}
+								break;
+							case 3: {
+								printMeal();
+							}
+								break;
+							case 4: {
+								printCuisine();
+							}
+								break;
+							case 5: {
+								printIngredient();
+							}
+								break;
+							case 6: {
+								printTable();
+							}
+								break;
+							case 7: {
+								printOrder();
+							}
+								break;
 
-						default: {
-							isPrint=false;
-						}
-						}
+							default: {
+								isPrint = false;
+							}
+							}
 
-					}
+						}
 					}
 						break;
 					case 3: {
-						boolean isDelete=true;
-						while(isDelete){
+						boolean isDelete = true;
+						while (isDelete) {
 							System.out.println("------------------------");
 							System.out.println("-->1)Delete Cafe");
 							System.out.println("-->2)Delete Time");
@@ -620,8 +712,8 @@ public class ConsolMenu {
 								break;
 							case 8: {
 
-								boolean isAllDelete=true;
-								while(isAllDelete){
+								boolean isAllDelete = true;
+								while (isAllDelete) {
 									System.out.println("------------------------");
 									System.out.println("--->1)Delete All Cafe");
 									System.out.println("--->2)Delete All Time");
@@ -660,16 +752,16 @@ public class ConsolMenu {
 										deleteAllOrder();
 									}
 									default: {
-										isAllDelete=false;
+										isAllDelete = false;
 									}
+									}
+
 								}
-							
-								}
-								}
+							}
 								break;
 
 							default: {
-								isDelete=false;
+								isDelete = false;
 							}
 							}
 						}
@@ -677,7 +769,7 @@ public class ConsolMenu {
 						break;
 
 					default: {
-
+						isAdm = false;
 					}
 					}
 				}
